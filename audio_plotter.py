@@ -10,14 +10,20 @@ import pywt
 import sys
 import noisereduce as nr
 import soundfile as sf
+import json
+
 #import spkit
 #print('spkit-version ', spkit.__version__)
 #import spkit as sp
 #from spkit.cwt import ScalogramCWT
 #from spkit.cwt import compare_cwt_example
+with open(str(sys.argv[1])) as f:
+  json_cfg = json.load(f)
 
-LC = float(sys.argv[2])
-HC = float(sys.argv[3])
+print(json_cfg['datafile'])
+
+LC = float(json_cfg['LC'])
+HC = float(json_cfg['HC'])
 FRAME_RATE = 22050
 
 def butter_bandpass(lowcut, highcut, fs, order=5):
@@ -53,7 +59,8 @@ def spectrogram(x, Fs, i, mel):
     return sg
 
 
-filepath, filename = str(sys.argv[1]).split('/',2)
+filepath, filename = str(json_cfg['datafile']).split('/',2)
+noisefilepath, noisefilename = str(json_cfg['noisefile']).split('/',2)
 filt_filename = 'filt_'+filename[:-4]+'_'+str(LC)+'-'+str(HC)+filename[-4:]
 filtNR_filename = 'filtNR_'+filename[:-4]+'_'+str(LC)+'-'+str(HC)+filename[-4:]
 
@@ -64,28 +71,28 @@ wavfile.write(filepath+'/'+filt_filename, samplerate, filtered)
 
 data2 , samplerate2 =sf.read(filepath+'/'+filt_filename)
 print(len(data2), samplerate2)
-noise , samplerate3 = sf.read(filepath+'/noise_16bit.wav')
+noise , samplerate3 = sf.read(noisefilepath+'/'+noisefilename)
 filtered_NR = nr.reduce_noise(audio_clip=librosa.to_mono(data2), noise_clip=noise)
 #filtered_NR = filtered_NR * 10
 wavfile.write(filepath+'/'+filtNR_filename, samplerate2, filtered_NR)
 
 
-x_noise, Fs_noise = librosa.load(filepath+'/noise_16bit.wav', sr = FRAME_RATE)
+x_noise, Fs_noise = librosa.load(noisefilepath+'/'+noisefilename, sr = FRAME_RATE)
 x_data, Fs_data = librosa.load(filepath+'/'+filename, sr = FRAME_RATE)
 x_dataF, Fs_dataF = librosa.load(filepath+'/'+filt_filename, sr = FRAME_RATE)
 x_dataFNR, Fs_dataFNR = librosa.load(filepath+'/'+filtNR_filename, sr = FRAME_RATE)
 
 x_array = [x_noise, x_data, x_dataF, x_dataFNR]
-x_title = [filepath+'/noise.wav', filepath+'/'+filename, filepath+'/'+filt_filename, filepath+'/'+filtNR_filename]
+x_title = [noisefilepath+'/'+noisefilename, filepath+'/'+filename, filepath+'/'+filt_filename, filepath+'/'+filtNR_filename]
 x_fs = [Fs_noise, Fs_data, Fs_dataF, Fs_dataFNR]
 counter = 0
 #plt.figure(figsize=(8, 6))
 fig, axs = plt.subplots(4,1,figsize=(8, 7))
 for x in x_array:
-    img = spectrogram(x, x_fs[counter], counter, sys.argv[4])
+    img = spectrogram(x, x_fs[counter], counter, json_cfg['mel_scale'])
     plt.colorbar(img, ax=axs[counter], format='%+2.0f dB')
     axs[counter].set_title(x_title[counter])
-    if not (sys.argv[4] == 'True' or sys.argv[4] == 'true' ):
+    if not (json_cfg['mel_scale'] == 'True' or json_cfg['mel_scale'] == 'true' ):
         axs[counter].set_yscale("log")
     axs[counter].set_ylim([10,20000])
     axs[counter].set_xlabel('Time [s]')
@@ -99,7 +106,7 @@ fig.tight_layout()
 
 d1 = filtered_NR
 dmax = abs(d1).max()
-dd = d1[252500:307750]
+dd = d1[int(json_cfg['low_bound']):int(json_cfg['high_bound'])]
 plot_scaling = 0.3#0.05
 
 fig2, axs2= plt.subplots(3,1,figsize=(8,6))
@@ -107,7 +114,7 @@ widths = np.arange(2,50,0.1)#,np.arange(1001,2001,100))
 #widths_mh = np.append(np.arange(7,31,0.1),np.arange(31,1001, 10))#,np.arange(1001,2001,100))
 #print(widths, pywt.scale2frequency("morl",(widths**2)/samplerate2))
 t=np.linspace(0,dd.size/samplerate2,dd.size)
-cwtmatr,freq = pywt.cwt(dd, widths**2, "morl", sampling_period=(1/samplerate2))
+cwtmatr,freq = pywt.cwt(dd, widths**2, json_cfg['wavelet'], sampling_period=(1/samplerate2))
 print(freq)
 #cwtmatr_mh,freq_mh = pywt.cwt(dd, widths_mh, "gaus4", sampling_period=(1/samplerate2))
     
