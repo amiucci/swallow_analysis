@@ -24,7 +24,6 @@ print(json_cfg['datafile'])
 
 LC = float(json_cfg['LC'])
 HC = float(json_cfg['HC'])
-FRAME_RATE = 22050
 
 def butter_bandpass(lowcut, highcut, fs, order=5):
     nyq = 0.5 * fs
@@ -34,13 +33,13 @@ def butter_bandpass(lowcut, highcut, fs, order=5):
     return b, a
 
 
-def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
+def butter_bandpass_filter(data, fs, lowcut, highcut, order=5):
     b, a = butter_bandpass(lowcut, highcut, fs, order=order)
     y = lfilter(b, a, data)
     return y 
 
-def bandpass_filter(buffer):
-    return butter_bandpass_filter(buffer, LC, HC, FRAME_RATE)
+def bandpass_filter(buffer, FS):
+    return butter_bandpass_filter(buffer,FS, LC, HC)
 
 def spectrogram(x, Fs, i, mel):
     N, H = 2048, 1024
@@ -66,21 +65,20 @@ filtNR_filename = 'filtNR_'+filename[:-4]+'_'+str(LC)+'-'+str(HC)+filename[-4:]
 
 
 samplerate, data = wavfile.read(filepath+'/'+filename)
-filtered = np.apply_along_axis(bandpass_filter, 0, data).astype('int16')
+filtered = np.apply_along_axis(bandpass_filter, 0, data, samplerate).astype('int16')
 wavfile.write(filepath+'/'+filt_filename, samplerate, filtered)
 
 data2 , samplerate2 =sf.read(filepath+'/'+filt_filename)
 print(len(data2), samplerate2)
 noise , samplerate3 = sf.read(noisefilepath+'/'+noisefilename)
 filtered_NR = nr.reduce_noise(audio_clip=librosa.to_mono(data2), noise_clip=noise)
-#filtered_NR = filtered_NR * 10
 wavfile.write(filepath+'/'+filtNR_filename, samplerate2, filtered_NR)
 
 
-x_noise, Fs_noise = librosa.load(noisefilepath+'/'+noisefilename, sr = FRAME_RATE)
-x_data, Fs_data = librosa.load(filepath+'/'+filename, sr = FRAME_RATE)
-x_dataF, Fs_dataF = librosa.load(filepath+'/'+filt_filename, sr = FRAME_RATE)
-x_dataFNR, Fs_dataFNR = librosa.load(filepath+'/'+filtNR_filename, sr = FRAME_RATE)
+x_noise, Fs_noise = librosa.load(noisefilepath+'/'+noisefilename, sr = samplerate3)
+x_data, Fs_data = librosa.load(filepath+'/'+filename, sr = samplerate3)
+x_dataF, Fs_dataF = librosa.load(filepath+'/'+filt_filename, sr = samplerate3)
+x_dataFNR, Fs_dataFNR = librosa.load(filepath+'/'+filtNR_filename, sr = samplerate3)
 
 x_array = [x_noise, x_data, x_dataF, x_dataFNR]
 x_title = [noisefilepath+'/'+noisefilename, filepath+'/'+filename, filepath+'/'+filt_filename, filepath+'/'+filtNR_filename]
@@ -106,7 +104,8 @@ fig.tight_layout()
 
 d1 = filtered_NR
 dmax = abs(d1).max()
-dd = d1[int(json_cfg['low_bound']):int(json_cfg['high_bound'])]
+start_frame , stop_frame = int(json_cfg['start_wavelet']*samplerate2) , int(json_cfg['stop_wavelet']*samplerate2)
+dd = d1[start_frame:stop_frame]
 plot_scaling = 0.3#0.05
 
 fig2, axs2= plt.subplots(3,1,figsize=(8,6))
