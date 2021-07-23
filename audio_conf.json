@@ -1,0 +1,9 @@
+{"LC" :50,
+"HC" : 2000,
+"datafile" : "data_helbling/drinking_water_16bit.wav",
+"noisefile" : "data_helbling/noise_16bit.wav",
+"mel_scale" : "False",
+"low_bound" : 0,
+"high_bound" : 60000,
+"wavelet" : "morl"
+}
