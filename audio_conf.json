@@ -1,5 +1,8 @@
 {"LC" :100,
 "HC" : 3000,
+"drink" : [5.65],
+"eat" : [13.01],
+"saliva" : [],
 "datafile" : "data_helbling/drinking_water_16bit.wav",
 "noisefile" : "data_helbling/noise_16bit.wav",
 "mel_scale" : "False",

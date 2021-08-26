@@ -92,6 +92,12 @@ for x in x_array:
     axs[counter].set_title(x_title[counter])
     if not (json_cfg['mel_scale'] == 'True' or json_cfg['mel_scale'] == 'true' ):
         axs[counter].set_yscale("log")
+    for drink_value in json_cfg['drink']:
+        axs[counter].annotate('drink', xy=(drink_value,200), xytext=(drink_value, 3500), textcoords='data', size=7, va="center", ha="center", bbox=dict(boxstyle="round4", fc="w", alpha=0.5), arrowprops=dict(arrowstyle="-|>", connectionstyle="arc3,rad=-0.2", fc="w", alpha=0.5))
+    for eat_value in json_cfg['eat']:
+        axs[counter].annotate('eat', xy=(eat_value,200), xytext=(eat_value, 3500), textcoords='data', size=7, va="center", ha="center", bbox=dict(boxstyle="round4", fc="w", alpha=0.5), arrowprops=dict(arrowstyle="-|>", connectionstyle="arc3,rad=-0.2", fc="w", alpha=0.5))
+    for drink_value in json_cfg['saliva']:
+        axs[counter].annotate('saliva', xy=(saliva_value,200), xytext=(saliva_value, 3500), textcoords='data', size=7, va="center", ha="center", bbox=dict(boxstyle="round4", fc="w", alpha=0.5), arrowprops=dict(arrowstyle="-|>", connectionstyle="arc3,rad=-0.2", fc="w", alpha=0.5))
     axs[counter].set_ylim([10,20000])
     axs[counter].set_xlabel('Time [s]')
     axs[counter].set_ylabel('Frequency [Hz]')
